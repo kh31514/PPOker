@@ -4,6 +4,10 @@ from sb3_contrib.common.wrappers import ActionMasker
 import time
 from train.SB3ActionMaskWrapper import SB3ActionMaskWrapper
 from train.mask_fn import mask_fn
+from train.eval import eval_action_mask
+from opponent_strats.call import call_focused_strategy
+from opponent_strats.random import random_strategy
+import pandas as pd
 
 
 def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
@@ -24,13 +28,41 @@ def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
     # a new action_mask_fn kwarg, as it did in an earlier draft.
     model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1)
     model.set_random_seed(seed)
-    model.learn(total_timesteps=steps)
 
-    model.save(
-        f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
+    call_data = []
+    random_data = []
+    steps_count = []
+    for i in range(0, steps, 2048):
+        model.learn(total_timesteps=2048)
+        model.save(
+            f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
+        
+        res = eval_action_mask(
+            env_fn, call_focused_strategy, num_games=100, render_mode=None, **env_kwargs
+        )
+        round_rewards, total_rewards, winrate, scores = res
+        call_data.append(float(winrate))
+
+
+        res = eval_action_mask(
+            env_fn, random_strategy, num_games=1000, render_mode=None, **env_kwargs
+        )
+        round_rewards, total_rewards, winrate, scores = res
+        random_data.append(float(winrate))
+
+        steps_count.append(i+2048)
+        print(i)
+
+
+    df = pd.DataFrame()
+    df['steps'] = steps_count
+    df['call'] = call_data
+    df['random'] = random_data
 
     print("Model has been saved.")
 
     print(f"Finished training on {str(env.unwrapped.metadata['name'])}.\n")
 
     env.close()
+
+    return df
