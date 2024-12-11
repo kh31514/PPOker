@@ -22,8 +22,7 @@ def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
     # with ActionMasker. If the wrapper is detected, the masks are automatically
     # retrieved and used when learning. Note that MaskablePPO does not accept
     # a new action_mask_fn kwarg, as it did in an earlier draft.
-    model = MaskablePPO(MaskableActorCriticPolicy,
-                        env, verbose=1, clip_range=0)
+    model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1)
     model.set_random_seed(seed)
     model.learn(total_timesteps=steps)
 
