@@ -4,6 +4,11 @@ from sb3_contrib.common.wrappers import ActionMasker
 import time
 from train.mask_fn import mask_fn
 from train.SB3ActionMaskWrapper import SB3ActionMaskWrapper
+from train.eval import eval_action_mask
+from opponent_strats.call import call_focused_strategy
+from opponent_strats.random import random_strategy
+import pandas as pd
+
 
 
 def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
@@ -65,7 +70,42 @@ def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
             return True
 
     callback = ObservationBasedClippingCallback(env)
-    model.learn(total_timesteps=steps, callback=callback)
+    
+    call_wr= []
+    random_wr = []
+    steps_count = []
+    call_reward_diff = []
+    random_reward_diff = []
+    for i in range(0, steps, 2048):
+        model.learn(total_timesteps=2048, callback=callback)
+        model.save(
+            f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
+        
+        res = eval_action_mask(
+            env_fn, call_focused_strategy, num_games=1000, render_mode=None, **env_kwargs
+        )
+        round_rewards, total_rewards, winrate, scores = res
+        call_wr.append(winrate)
+        call_reward_diff.append(int(total_rewards['player_1']))
+
+
+        res = eval_action_mask(
+            env_fn, random_strategy, num_games=1000, render_mode=None, **env_kwargs
+        )
+        round_rewards, total_rewards, winrate, scores = res
+        random_reward_diff.append(int(total_rewards['player_1']))
+        random_wr.append(float(winrate))
+
+        steps_count.append(i+2048)
+        print(i)
+
+
+    df = pd.DataFrame()
+    df['steps'] = steps_count
+    df['call_wr'] = call_wr
+    df['call_diff'] = call_reward_diff
+    df['random_wr'] = random_wr
+    df['random_diff'] = random_reward_diff
 
     model.save(
         f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
@@ -74,3 +114,5 @@ def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
     print(f"Finished training on {str(env.unwrapped.metadata['name'])}.\n")
 
     env.close()
+
+    return df
