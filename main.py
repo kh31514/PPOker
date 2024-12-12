@@ -9,7 +9,7 @@ from pettingzoo.classic import texas_holdem_no_limit_v6
 env_fn = texas_holdem_no_limit_v6
 
 env_kwargs = {}
-steps = 32768
+steps = 1600
 # steps = 8192
 
 # Train a model against itself (takes ~2 minutes on GPU)

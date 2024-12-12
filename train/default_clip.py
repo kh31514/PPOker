@@ -34,8 +34,9 @@ def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
     steps_count = []
     call_reward_diff = []
     random_reward_diff = []
-    for i in range(0, steps, 2048):
-        model.learn(total_timesteps=2048)
+    step_size = 16
+    for i in range(0, steps, step_size):
+        model.learn(total_timesteps=step_size)
         model.save(
             f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
 
@@ -53,7 +54,7 @@ def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
         random_reward_diff.append(int(total_rewards['player_1']))
         random_wr.append(float(winrate))
 
-        steps_count.append(i+2048)
+        steps_count.append(i+step_size)
         print(i)
 
     df = pd.DataFrame()

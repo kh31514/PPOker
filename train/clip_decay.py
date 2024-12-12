@@ -52,36 +52,43 @@ def train_action_mask(env_fn, steps=10_000, seed=0, initial_clip=0.2, clip_decay
     # Create and add the adaptive clipping callback
     adaptive_clip_callback = AdaptiveClippingCallback(initial_clip, clip_decay)
 
-    call_data = []
-    random_data = []
+    call_wr= []
+    random_wr = []
     steps_count = []
-    for i in range(0, steps, 2048):
-        model.learn(total_timesteps=2048, callback=adaptive_clip_callback)
-        # model.learn(total_timesteps=2048)
+    call_reward_diff = []
+    random_reward_diff = []
+    step_size = 2048
+
+    for i in range(0, steps, step_size):
+        model.learn(total_timesteps=step_size, callback=adaptive_clip_callback)
         model.save(
             f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
-
+        
         res = eval_action_mask(
             env_fn, call_focused_strategy, num_games=1000, render_mode=None, **env_kwargs
         )
         round_rewards, total_rewards, winrate, scores = res
-        call_data.append(float(winrate))
+        call_wr.append(winrate)
+        call_reward_diff.append(int(total_rewards['player_1']))
+
 
         res = eval_action_mask(
             env_fn, random_strategy, num_games=1000, render_mode=None, **env_kwargs
         )
         round_rewards, total_rewards, winrate, scores = res
-        random_data.append(float(winrate))
+        random_reward_diff.append(int(total_rewards['player_1']))
+        random_wr.append(float(winrate))
 
-        steps_count.append(i+2048)
+        steps_count.append(i+step_size)
         print(i)
+
 
     df = pd.DataFrame()
     df['steps'] = steps_count
-    df['call'] = call_data
-    df['random'] = random_data
-
-    print("Model has been saved.")
+    df['call_wr'] = call_wr
+    df['call_diff'] = call_reward_diff
+    df['random_wr'] = random_wr
+    df['random_diff'] = random_reward_diff    
 
     print(f"Finished training on {str(env.unwrapped.metadata['name'])}.\n")
 
