@@ -3,7 +3,7 @@ import os
 from sb3_contrib import MaskablePPO
 
 
-def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_kwargs):
+def eval_action_mask(env_fn, opp_strat, save_folder, num_games=100, render_mode=None, **env_kwargs):
     # Evaluate a trained agent vs a random agent
     env = env_fn.env(render_mode=render_mode, **env_kwargs)
 
@@ -13,7 +13,7 @@ def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_k
 
     try:
         latest_policy = max(
-            glob.glob(f"saved_models/{env.metadata['name']}*.zip"), key=os.path.getctime
+            glob.glob(f"saved_models/{save_folder}/{env.metadata['name']}*.zip"), key=os.path.getctime
         )
     except ValueError:
         print("Policy not found.")

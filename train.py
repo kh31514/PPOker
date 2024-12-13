@@ -3,10 +3,10 @@ from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from sb3_contrib.common.wrappers import ActionMasker
 import time
 from SB3ActionMaskWrapper import SB3ActionMaskWrapper
-from archive.eval import eval_action_mask
+from eval import eval_action_mask
 from opponent_strats.call import call_focused_strategy
 from opponent_strats.random import random_strategy
-from archive.save_to_csv import save_to_csv
+from save_to_csv import save_to_csv
 import numpy as np
 import copy
 
@@ -45,12 +45,12 @@ def train(env_fn, save_folder, steps=32768, step_size=2048, seed=0, clip_range=0
     for i in range(0, steps, step_size):
         model.learn(total_timesteps=step_size, callback=callback)
         model.save(
-            f"saved_models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
+            f"saved_models/{save_folder}/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
 
         for opp in opps:
             strat = opps[opp]
             res = eval_action_mask(
-                env_fn, strat, num_games=1000, render_mode=None, **env_kwargs
+                env_fn, strat, save_folder, num_games=1000, render_mode=None, **env_kwargs
             )
             round_rewards, total_rewards, winrate, scores, moves = res
             data[opp]["move_count"] += [moves]

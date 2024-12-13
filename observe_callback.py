@@ -1,11 +1,21 @@
 from stable_baselines3.common.callbacks import BaseCallback
+from SB3ActionMaskWrapper import SB3ActionMaskWrapper
+from sb3_contrib.common.wrappers import ActionMasker
+
+
+def mask_fn(env):
+    return env.action_mask()
 
 
 class ObservationBasedClippingCallback(BaseCallback):
     """Custom callback to update clipping based on observations."""
 
-    def __init__(self, env, verbose=0):
+    def __init__(self, env_fn, verbose=0):
         super().__init__(verbose)
+        env = env_fn.env()
+        env = SB3ActionMaskWrapper(env)
+        env.reset(seed=0)
+        env = ActionMasker(env, mask_fn)
         self.env = env
         self.current_obs = None  # To hold the current observation
 
