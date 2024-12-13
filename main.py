@@ -13,4 +13,4 @@ decay_callback = DecayClippingCallback()
 train(env_fn, "decay_clip", callback=decay_callback)
 
 observe_callback = ObservationBasedClippingCallback()
-train(env_fn, "observe_clip", callback=decay_callback)
+train(env_fn, "observe_clip", callback=observe_callback)
