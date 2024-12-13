@@ -2,17 +2,14 @@ import glob
 import os
 from sb3_contrib import MaskablePPO
 
-from opponent_strats.call import call_focused_strategy
-from opponent_strats.random import random_strategy
-
 
 def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_kwargs):
     # Evaluate a trained agent vs a random agent
     env = env_fn.env(render_mode=render_mode, **env_kwargs)
 
-    print(
-        f"Starting evaluation vs a random agent. Trained agent will play as {env.possible_agents[1]}."
-    )
+    # print(
+    #     f"Starting evaluation vs a random agent. Trained agent will play as {env.possible_agents[1]}."
+    # )
 
     try:
         latest_policy = max(
@@ -27,6 +24,7 @@ def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_k
     scores = {agent: 0 for agent in env.possible_agents}
     total_rewards = {agent: 0 for agent in env.possible_agents}
     round_rewards = []
+    moves = [0, 0, 0, 0, 0]
 
     for i in range(num_games):
         env.reset(seed=i)
@@ -57,9 +55,6 @@ def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_k
             else:
                 if agent == env.possible_agents[0]:
                     # logic for opponent
-                    # act = env.action_space(agent).sample(action_mask)
-                    # act = random_strategy(agent, env, action_mask)
-                    # act = call_focused_strategy(agent, env, action_mask)
                     act = opp_strat(agent, env, action_mask)
                 else:
                     # Note: PettingZoo expects integer actions # TODO: change chess to cast actions to type int?
@@ -68,6 +63,8 @@ def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_k
                             observation, action_masks=action_mask, deterministic=True
                         )[0]
                     )
+                    moves[act] += 1
+
             env.step(act)
     env.close()
 
@@ -76,8 +73,8 @@ def eval_action_mask(env_fn, opp_strat, num_games=100, render_mode=None, **env_k
         winrate = 0
     else:
         winrate = scores[env.possible_agents[1]] / sum(scores.values())
-    print("Rewards by round: ", round_rewards)
-    print("Total rewards (incl. negative rewards): ", total_rewards)
-    print("Winrate: ", winrate)
-    print("Final scores: ", scores)
-    return round_rewards, total_rewards, winrate, scores
+    # print("Rewards by round: ", round_rewards)
+    # print("Total rewards (incl. negative rewards): ", total_rewards)
+    # print("Winrate: ", winrate)
+    # print("Final scores: ", scores)
+    return round_rewards, total_rewards, winrate, scores, moves
